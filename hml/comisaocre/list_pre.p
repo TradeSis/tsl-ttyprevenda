@@ -65,9 +65,10 @@ def var esqvazio        as log.
 def var esqascend     as log initial yes.
 
 form zprodu.procod    column-label "Codigo"     format ">>>>>>>>9"
-        zprodu.pronom    column-label "Produto"    format "x(40)"
+        zprodu.pronom    column-label "Produto"    format "x(30)"
         wf-movim.movqtm  column-label "Quantidade" format ">>>9"
         wf-movim.movpc   column-label "Preco"
+        wf-movim.vencod column-label "Vended" format ">>>>>9"
         with frame frame-a 10 down width 80 row 4
                 title (" Produtos ") overlay.
 
@@ -428,10 +429,11 @@ hide frame frame-a no-pause.
 procedure frame-a.
 find zprodu where recid(zprodu) = wf-movim.wrec no-lock no-error.
 
-display zprodu.procod    column-label "Codigo"     format ">>>>>>>9"
-        zprodu.pronom    column-label "Produto"    format "x(40)"
-        wf-movim.movqtm  column-label "Quantidade" format ">>>9"
-        wf-movim.movpc   column-label "Preco"
+display zprodu.procod    
+        zprodu.pronom    
+        wf-movim.movqtm  
+        wf-movim.movpc   
+        wf-movim.vencod        
         with frame frame-a.
 end procedure.
 procedure color-message.

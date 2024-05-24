@@ -570,7 +570,22 @@ repeat with centered row 3 side-label width 80 1 down
     then do on error undo:
         scartao = "".
         /* Hélio 31012024 - RETIRADO COMENTARIOS */
-        update vclichar label "CPF" format "x(14)".
+        update vclichar label "CPF" format "x(14)"
+            go-on(P p).
+        if keyfunction(lastkey) = "P"
+        then do:
+            vclichar = "".
+            disp vclichar.
+            run busca-pedido-p2k.p (output vclicod).
+            if vclicod <> 0
+            then do:
+                find clien where clien.clicod = vclicod no-lock no-error.
+                if avail clien
+                then do:
+                    vclichar = clien.ciccgc.
+                end.
+            end.                
+        end.
         
         if vclichar <> "" and
            vclichar <> "0" 
@@ -765,8 +780,8 @@ repeat with centered row 3 side-label width 80 1 down
 
 /*    find first black_friday where black_friday.numero > 0 no-error.
     if avail black_friday
-    then color disp message vopcre[2] with frame f-op
-    else color disp normal vopcre[2] with frame f-op helio 12112021*/
+    then color disp message vopcre[2] with frame f-opcom.
+    else color disp normal vopcre[2] with frame f-opcom. helio 12112021*/
 /*    view frame f-desti.*/
     view frame f-chp.
     view frame f-produ1.
@@ -792,11 +807,32 @@ repeat with centered row 3 side-label width 80 1 down
         v-vendedor = 1.
     end.
     
+    /* HELIO 22042024 */
+    /*find last wf-movim no-lock no-error.
+    if avail wf-movim
+    then do:
+        find produ where recid(produ) = wf-movim.wrec no-lock.
+        vprocod = produ.procod.
+        vpreco  = wf-movim.movpc.
+    */    
+        vprotot = 0.
+        for each wf-movim. 
+            vprotot = vprotot + (wf-movim.movqtm * wf-movim.movpc).
+        end.    
+        
+        disp /*vprocod 
+             produ.pronom
+             vpreco   */
+             vprotot
+             with frame f-produ.
+    /*
+        end.
+    */    
+
     bl-plano:
     do on error undo.
         hide frame f-finan no-pause.
         view frame f-opcom.
-
         prevenda = no.
         repeat with 1 down on endkey undo, return:
             /*17.01.2020 verus - resgate cupomdesconto */
@@ -804,9 +840,7 @@ repeat with centered row 3 side-label width 80 1 down
                 wf-movim.movpc    = wf-movim.movpc + (wf-movim.desconto / wf-movim.movqtm). 
                 wf-movim.desconto = 0.
             end.
-            /* helio 12/03/2024
-            *run p-atu-frame.
-            */
+            run p-atu-frame. /* HELIO 22042024 */
             /*17.01.2020 verus - resgate cupomdesconto */
             
             /****verus
@@ -818,7 +852,7 @@ repeat with centered row 3 side-label width 80 1 down
              
             hide frame f-exclusao no-pause.
             /* helio 12112021
-            display vopcre with frame f-op
+            display vopcre with frame f-opcom.
             */
             prevenda = no.
             clear frame fsenha all.
@@ -833,7 +867,29 @@ repeat with centered row 3 side-label width 80 1 down
             update vprocod
                    go-on (F5 F6 B b F9 F10 E e A a P p L l S s r R o O G g)
                         with frame f-produ.
-            if vprocod = 0
+
+            /* Novo Lugar Tecla L */
+            if lastkey = keycode("L") or lastkey = keycode("l")
+            then do:
+                find first wf-movim no-error.
+                if not avail wf-movim
+                then do:
+                    message "Venda Sem Mercadoria".
+                    pause.
+                    undo, retry.
+                end.                
+                vmens = "Consultando Produtos Incluidos na Pre-Venda.".
+                hide message no-pause.
+                message vmens.
+                /*verus
+                disp vmens  with frame f-mensagem.
+                */
+                /*pause 0*/
+                run list_pre.p.
+                next.
+            end.
+
+            if vprocod = 0 
             then undo.
             
             
@@ -980,8 +1036,7 @@ repeat with centered row 3 side-label width 80 1 down
                             if not avail fprodu
                                    then next.
 
-                            IF OPSYS = "UNIX"
-                            THEN run pdvapiconsultarproduto.p (setbcod, fprodu.procod).
+                            run pdvapiconsultarproduto.p (setbcod, fprodu.procod).
                         
                             vqtdKIT = 
                                 int(acha2("QTDVENDA",fprodu.indicegenerico)).
@@ -1471,25 +1526,7 @@ repeat with centered row 3 side-label width 80 1 down
                 next.
             end.
 
-            if lastkey = keycode("L") or lastkey = keycode("l")
-            then do:
-                find first wf-movim no-error.
-                if not avail wf-movim
-                then do:
-                    message "Venda Sem Mercadoria".
-                    pause.
-                    undo, retry.
-                end.                
-                vmens = "Consultando Produtos Incluidos na Pre-Venda.".
-                hide message no-pause.
-                message vmens.
-                /*verus
-                disp vmens  with frame f-mensagem.
-                */
-                /*pause 0*/
-                run list_pre.p.
-                next.
-            end.
+            /* AQUI FICAVA TECLA L            */
             
             if lastkey = keycode("T") or lastkey = keycode("t")
             then do on endkey undo, retry: 
@@ -1821,8 +1858,8 @@ repeat with centered row 3 side-label width 80 1 down
                 /* helio 12112021
                 find first black_friday where black_friday.numero > 0 no-error.
                 if avail black_friday
-                then color disp message vopcre[2] with frame f-op
-                else color disp normal vopcre[2] with frame f-op
+                then color disp message vopcre[2] with frame f-opcom.
+                else color disp normal vopcre[2] with frame f-opcom.
                 */
                 next.
             end. 
@@ -1858,6 +1895,15 @@ repeat with centered row 3 side-label width 80 1 down
                     message "Produto nao pertence a esta nota".
                     undo.
                 end.
+
+                /* HELIO 22042024 - Comissao Crediarista */
+                    if wf-movim.vencod <> 0
+                    then do:
+                        message "ITEM PERTENCE A VENDA ORIGINAL DO VENDEDOR" wf-movim.vencod
+                            view-as alert-box.
+                        undo.    
+                    end.
+
 
                 if wf-movim.movalicms = 98 /* #2 */
                 then do.
@@ -2421,7 +2467,14 @@ repeat with centered row 3 side-label width 80 1 down
                     end.
                     
                 end.
-                
+                else do: /* HELIO 22042024 - Comissao Crediarista */
+                    if wf-movim.vencod <> 0
+                    then do:
+                        message "ITEM PERTENCE A VENDA ORIGINAL DO VENDEDOR" wf-movim.vencod
+                            view-as alert-box.
+                        undo.    
+                    end.
+                end. 
                 assign
                     wf-movim.movqtm   = wf-movim.movqtm + 1
                     wf-movim.precoori = estoq.estvenda
@@ -5148,6 +5201,7 @@ procedure fluxo-desconto. /* helio 18/03/2021 */
                     message "(1) produto nao cadastrado".
                     undo.
                 end.    
+                
                 vindbldes = no.
                 run verifica-bloqueio-desconto.
                 if vindbldes
@@ -5174,6 +5228,14 @@ procedure fluxo-desconto. /* helio 18/03/2021 */
                         vagrupador = yes.
                     end.
                 end. 
+                /* HELIO 22042024 - Comissao Crediarista */
+                    if wf-movim.vencod <> 0
+                    then do:
+                        message "ITEM PERTENCE A VENDA ORIGINAL DO VENDEDOR" wf-movim.vencod
+                            view-as alert-box.
+                        undo.    
+                    end.
+                
 
             if vagrupador
             then do:
@@ -5700,4 +5762,3 @@ procedure fluxo-desconto. /* helio 18/03/2021 */
 
 
 end procedure.
-
