@@ -22,42 +22,44 @@ end.
 
 pause 0.
 DEFINE VARIABLE cFileStream AS CHARACTER NO-UNDO.
+if search(par-dir) = ?
+then return.
 
-INPUT FROM OS-DIR (par-dir).
-REPEAT:
-    IMPORT cFileStream. 
-    FILE-INFO:FILE-NAME = par-dir + cFileStream.
-    if  entry(num-entries(cFileStream,"."),cFileStream,".") = "csi" /*or
-        entry(num-entries(cFileStream,"."),cFileStream,".") = "pag" */
-    then.
-    else  next.
+    INPUT FROM OS-DIR (par-dir).
+    REPEAT:
+        IMPORT cFileStream. 
+        FILE-INFO:FILE-NAME = par-dir + cFileStream.
+        if  entry(num-entries(cFileStream,"."),cFileStream,".") = "csi" /*or
+            entry(num-entries(cFileStream,"."),cFileStream,".") = "pag" */
+        then.
+        else  next.
     
-    create tt-arqs.
-    tt-arqs.arquivos        = cFileStream.
-    tt-arqs.FULL-PATHNAME   = FILE-INFO:FULL-PATHNAME.
-/*
+        create tt-arqs.
+        tt-arqs.arquivos        = cFileStream.
+        tt-arqs.FULL-PATHNAME   = FILE-INFO:FULL-PATHNAME.
+    /*
             DISPLAY cFileStream FORMAT "X(18)" LABEL 'name of the file'
                         FILE-INFO:FULL-PATHNAME FORMAT "X(21)" LABEL 'FULL-PATHNAME'
                                     FILE-INFO:PATHNAME FORMAT "X(21)" LABEL 'PATHNAME'
                                                 FILE-INFO:FILE-TYPE FORMAT "X(5)" LABEL 'FILE-TYPE'.
 */                                                
-    for each ttp2k_pedido01. 
-            delete ttp2k_pedido01. 
-    end.
+        for each ttp2k_pedido01. 
+                delete ttp2k_pedido01. 
+        end.
  
-    run importa_file_p2k.p (input tt-arqs.FULL-PATHNAME,1).
+        run importa_file_p2k.p (input tt-arqs.FULL-PATHNAME,1).
  
 
-    find first ttp2k_pedido01.
-    tt-arqs.numero_pedido   = ttp2k_pedido01.numero_pedido.
-    tt-arqs.codigo_loja     = ttp2k_pedido01.codigo_loja.
-    tt-arqs.Codigo_Cliente  = ttp2k_pedido01.Codigo_Cliente.
-    tt-arqs.nome_cliente    = ttp2k_pedido01.nome_cliente.
-    delete ttp2k_pedido01.    
+        find first ttp2k_pedido01.
+        tt-arqs.numero_pedido   = ttp2k_pedido01.numero_pedido.
+        tt-arqs.codigo_loja     = ttp2k_pedido01.codigo_loja.
+        tt-arqs.Codigo_Cliente  = ttp2k_pedido01.Codigo_Cliente.
+        tt-arqs.nome_cliente    = ttp2k_pedido01.nome_cliente.
+        delete ttp2k_pedido01.    
     
-END.
-input close.
-
+    END.
+    input close.
+ 
 /*
 
 */

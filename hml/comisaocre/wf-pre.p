@@ -585,6 +585,7 @@ repeat with centered row 3 side-label width 80 1 down
                     vclichar = clien.ciccgc.
                 end.
             end.                
+            else undo.
         end.
         
         if vclichar <> "" and
