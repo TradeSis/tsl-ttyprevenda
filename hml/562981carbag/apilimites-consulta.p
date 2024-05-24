@@ -1,6 +1,6 @@
 /* #102022 helio bag */
 def var pnomeapi as char        init "limites".
-def var pnomerecurso as char    init "consulta".
+def var pnomerecurso as char    init "limite-bag".
 def new global shared var spid as int.
 def new global shared var spidseq as int.
 
@@ -43,6 +43,17 @@ DEFINE shared TEMP-TABLE ttclien NO-UNDO       serialize-name 'creditoCliente'
     field quantidadeAte45Dias as int
     field quantidadeAcima45Dias as int
     /* #092022 */
+    /* helio replicacao de dados do cliente */
+    field cep       as char
+    field logradouro as char
+    field numero as int
+    field complemento   as char    
+    field bairro as char
+    field cidade as char
+    field estado as char
+    field email as char
+    field celular as char
+    
     index cli is unique primary clicod asc tipo desc.
 
 DEFINE DATASET conteudoSaida FOR ttclien.
@@ -90,7 +101,7 @@ input close.
     then vchost = "sv-ca-db-qa". 
     else vchost = "10.2.0.83". 
 
-    vapi = "http://\{IP\}/bsweb/api/limites/\{cpf\}/limite".
+    vapi = "http://\{IP\}/bsweb/api/limites/\{cpf\}/limite-bag".
     
     vapi = replace(vapi,"\{IP\}",vchost).
     vapi = replace(vapi,"\{cpf\}",string(pcpf)).
@@ -172,7 +183,21 @@ then do:
         /** TESTE TT - TRATAMENTO DE DADOS */
         find first ttclien no-error.
         if avail ttclien
-        then do:
+        then do on error undo:
+            find clien where clien.clicod = ttclien.clicod exclusive no-wait no-error.
+            if avail clien
+            then do:
+                clien.cep[1] = ttclien.cep.
+                clien.endereco[1] = ttclien.logradouro.
+                clien.numero[1]     = ttclien.numero.
+                clien.compl[1]  = ttclien.complemento.
+                clien.bairro[1] = ttclien.bairro.
+                clien.cidade[1] = ttclien.cidade.
+                clien.ufecod[1] = ttclien.estado.
+                clien.zona      = ttclien.email.
+                clien.fax      = ttclien.celular.
+             
+            end.
         end. 
     
     
