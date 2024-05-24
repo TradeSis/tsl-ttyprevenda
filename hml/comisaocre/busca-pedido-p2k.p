@@ -33,7 +33,12 @@ def var parquivo as char.
 
     run get_file_p2k.p (setbcod,
                         output parquivo).
-
+    if parquivo = "" or parquivo = ? then do:
+        hide message no-pause.
+        message "Nenhum pedido disponivel". 
+        pause 2.
+        return.
+    end.    
     for each ttp2k_pedido01.  delete ttp2k_pedido01.  end.
  
     run importa_file_p2k.p (input parquivo,?).
