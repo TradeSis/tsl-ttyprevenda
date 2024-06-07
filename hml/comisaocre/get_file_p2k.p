@@ -22,9 +22,13 @@ end.
 
 pause 0.
 DEFINE VARIABLE cFileStream AS CHARACTER NO-UNDO.
+/*
 if search(par-dir) = ?
-then return.
-
+then do:
+    message par-dir. pause.
+    return.
+end.    
+*/
     INPUT FROM OS-DIR (par-dir).
     REPEAT:
         IMPORT cFileStream. 
