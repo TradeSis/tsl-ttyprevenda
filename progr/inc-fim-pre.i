@@ -597,20 +597,7 @@ do on error undo, retry  on endkey undo, leave with frame f-desti:
                             with frame f-condi.
                     pause 0.         
 
-                hide message no-pause .
-                bell.
-                message "Selecione uma moeda de pagamento, pois a venda eh com produto em promoção". 
-                def var cmoedas as char format "x(36)" extent 2 init ["     [Pagamento em Dinheiro]",
-                                                                      "[Pagamento em Cartao de Debito]"].
-                        disp cmoedas with frame fcmoedas row 10 centered 
-                    overlay no-labels
-                    title " PAGAMENTO A VISTA COM PROMOCAO " + string(vpromocoes) + " - SELECIONE MOEDAS ".
-                choose field cmoedas with frame fcmoedas.
-                pmoeda = if frame-index = 1 then "DINHEIRO" else "TEFDEBITO".
-                disp 
-                     finan.finnom + " [" + pmoeda + "]" @ finan.finnom with frame f-desti.
-                hide message no-pause.
-                hide frame fcmoedas no-pause.                
+                {pdvselmoeda.i}                
             end.
         end.
 
