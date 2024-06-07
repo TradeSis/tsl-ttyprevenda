@@ -23,7 +23,8 @@
         run medtelapro.p.
     
     do:    
-        find first ttmedprodu where ttmedprodu.procod = pprocod no-lock.
+        find first ttmedprodu where ttmedprodu.procod = pprocod no-lock no-error.
+        if not avail ttmedprodu then return.
                 
         
         disp pprocod format ">>>>>>>>9" 
@@ -34,6 +35,15 @@
              
             with frame frame-cab 1 down centered row 5 no-box overlay
             no-labels.
+            
+            
+        /* Limpa os Perfis e Planos de outros produtos */.
+        for each ttcampos where ttcampos.idperfil <> ttmedprodu.idPerfil.
+                delete ttcampos.
+        end.        
+        for each ttplanos where ttplanos.procod <> ttmedprodu.procod.
+            delete ttplanos.
+        end.    
         run medtelaper.p.
     
         
