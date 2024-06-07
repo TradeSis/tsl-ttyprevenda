@@ -6,7 +6,15 @@ def new shared var vapiconsultarproduto as log format "Ligado/Desligado".
 {dftempWG.i new}
 {baginc-def-pre.i new}
 {garan-rfq.i new}
+{wc-consultamargemdesconto.i new}
+def var vsenha  as char.
+def var vfuncod like func.funcod.
 
+def new shared var p-supervisor as char.
+def var p-libregional as log.
+def var vdescontoMaximoPermitido as dec.
+
+def var vtrocado as log format "T/ ".
 def var vpassa as log.
 def var vf5 as log.
 def var vliqui as dec.
@@ -18,8 +26,9 @@ def var vmen-pla as char.
 def var block-plano as log init no.
 
 def var vparam-WG as char.
-def var perc-desc as dec.
+def var vperc-desc as dec.
 def buffer fprodu for produ.
+def buffer bfunc for func.
 
 def buffer cttitens for ttitens.
 def var varquivo as char.
@@ -146,8 +155,9 @@ form
         ttitens.codigoProduto column-label "codigo" format ">>>>>>>>9"
         produ.pronom column-label "nome produto" format "x(20)"
         ttitens.quantidade format ">>>9" column-label "qtd"
+        vtrocado column-label "T"
 
-        ttitens.quantidadeConvertida format ">>>9" column-label "qtd!vendida"
+        ttitens.quantidadeConvertida format ">>>9" column-label "qtd!vend"
         ttitens.valorUnitario format ">>>9.99" column-label "preco"
         ttitens.valorLiquido  format ">>>9.99" column-label "promo"
         
@@ -239,38 +249,24 @@ repeat:
     repeat with frame frame-a:
 
         find ttitens where recid(ttitens) = recatu1 no-lock.
-      /*
-        find first bttitens where 
-                recid(bttitens) <> recatu1 and
-                bttitens.quantidadeconvertida <> ? no-error. 
+        hide message no-pause.
         esqcom1[1] = "venda".
+        esqcom1[2] = "digita".
+        esqcom1[3] = "trocar".
+        esqcom1[4] = "elimina".
         
-        if ttitens.quantidadeConvertida = ttitens.quantidade and not avail bttitens
-        then esqcom1[1] = "".
-      */  
-        status default "".
-        /*
-        def var vx as int.
-        def var va as int.
-        va = 1.
-        do vx = 1 to 6.
-            if esqcom1[vx] = ""
-            then next.
-            esqcom1[va] = esqcom1[vx].
-            va = va + 1.  
+        if ttitens.trocado <> 0
+        then do:
+            esqcom1[1] = "". 
+            esqcom1[2] = "".
+            esqcom1[3] = "".
+            esqcom1[4] = "".
         end.
-        vx = va.
-        do vx = va to 6.
-            esqcom1[vx] = "".
-        end.     
-        */
-    hide message no-pause.
         
         find first bttitens where bttitens.quantidadeconvertida <> ? and bttitens.quantidadeconvertida > 0 no-error.
         if avail bttitens then esqcom1[7] = "". else esqcom1[7] = "ret sem venda".
         find first bttitens where bttitens.quantidadeconvertida <> ? and bttitens.quantidadeconvertida > 0 no-error.
         if not avail bttitens then esqcom1[6] = "". else esqcom1[6] = "fecha venda".
-        
         
         disp esqcom1 with frame f-com1.
         
@@ -298,6 +294,7 @@ repeat:
         if keyfunction(lastkey) = "A"
         then do:
             run pdesconto.        
+            leave.
         end.
                                                                 
             if keyfunction(lastkey) = "cursor-right"
@@ -471,6 +468,7 @@ procedure frame-a.
         ttitens.codigoProduto
         ttitens.quantidadeConvertida when ttitens.quantidadeConvertida <> ?
         ttitens.quantidade
+        ttitens.trocado <> 0 @ vtrocado 
         ttitens.valorUnitario
         ttitens.valorLiquido
         
@@ -519,19 +517,19 @@ def input parameter par-tipo as char.
 
     if par-tipo = "pri" 
     then do:
-        find last ttitens where ttitens.trocado = 0
+        find last ttitens /*where ttitens.trocado = 0*/
             no-lock no-error.
     end.    
                                              
     if par-tipo = "seg" or par-tipo = "down" 
     then do:
-        find prev ttitens  where ttitens.trocado = 0
+        find prev ttitens  /*where ttitens.trocado = 0*/
             no-lock no-error.
     end.    
              
     if par-tipo = "up" 
     then do:
-        find next ttitens where ttitens.trocado = 0
+        find next ttitens /*where ttitens.trocado = 0*/
             no-lock no-error.
 
     end.  
@@ -1234,20 +1232,24 @@ def var vtrocar as int.
             ttitens.valorunitario = vpreco.
 
             ttitens.valortotalconvertida = ttitens.valorunitario * ttitens.quantidadeconvertida.        
+            /*
+            pause 0.
             disp ttitens.valorunitario ttitens.valortotalconvertida
             ttitens.quantidadeconvertida
             with frame frame-a.
-        
+            */
         
         /* fim bloco do wf-pre */
         
         
         
         vsalvar =  yes.
+        
         pause 0.
         disp           ttitens.quantidadeConvertida.
                        
             recatu1 = ?.
+        /*    
             run leitura (input "pri").
             clear frame frame-a all no-pause.
             run frame-a.
@@ -1261,7 +1263,7 @@ def var vtrocar as int.
                 down with frame frame-a.
                 run frame-a.
             end.
-        
+        */
         
     end.
 
@@ -1272,11 +1274,18 @@ end procedure.
 
 
 
-
 procedure pdesconto.
+     def var npreco_total    as dec.
+     def var npreco_unitario as dec.
 
-def var vescd as char format "x(15)" extent 1
-                 init [/*"1. Valor     ", "2. Percentual",*/ "Funcionário"].
+      def var vbarramentolibera as log.
+      def var vgerentelibera    as log.
+      def var vsupervisorlibera as log.
+        def var vbarr-desc as dec.
+        def var vperc-des as dec.
+        def var vdescper as dec.
+def var vescd as char format "x(15)" extent 3
+                 init ["1. Valor     ", "2. Percentual", "3. Funcionário"].
 def var vtipo-desc as int.
                 
                 vtipo-desc = 0.
@@ -1287,9 +1296,34 @@ def var vtipo-desc as int.
                 choose field vescd with frame f-escd.
                 
                 vtipo-desc = frame-index. /*1=Valor/2=Percentual/3=Funcionario*/
-                vtipo-desc = 3. /* fixo por enquanto */
                 
                 hide frame f-escd no-pause.
+                find fprodu where fprodu.procod = ttitens.codigoProduto no-lock.
+                
+                    if vtipo-desc = 1
+                    then do:                                               
+                        ttitens.valorLiquido = ttitens.valorunitario.
+                            update ttitens.valorLiquido with frame frame-a.
+                            ttitens.descontoproduto  = (ttitens.valorunitario - ttitens.valorliquido) * ttitens.quantidadeconvertida.
+                            ttitens.valortotalconvertida = ttitens.valorliquido * ttitens.quantidadeconvertida.        
+                    end.    
+                    if vtipo-desc = 2
+                    then do:
+                            vdescper = 0.
+                            pause 0.
+                            update vdescper label "Desconto de "
+                                   with frame fdesc centered side-labels overlay
+                                            row 7.
+                            hide frame fdesc no-pause.
+                            if vdescper <> 0
+                            then do:
+                                assign ttitens.valorLiquido = ttitens.valorUnitario - (ttitens.valorUnitario * vdescper / 100).
+                                ttitens.descontoproduto  = (ttitens.valorunitario - ttitens.valorliquido) * ttitens.quantidadeconvertida.
+                                ttitens.valortotalconvertida = ttitens.valorliquido * ttitens.quantidadeconvertida.        
+                                
+
+                            end.                                    
+                    end.
                 
                     if vtipo-desc = 3
                     then do:
@@ -1331,8 +1365,6 @@ def var vtipo-desc as int.
                             and tt-descfunc.tem_cadastro = yes
                             and tt-descfunc.tipo_funcionario = yes
                         then do:
-                            do:
-                                
                                 find fprodu where fprodu.procod = ttitens.codigoProduto no-lock.
                                 if fprodu.catcod = 31
                                 then assign ttitens.valorLiquido = ttitens.valorUnitario
@@ -1344,8 +1376,6 @@ def var vtipo-desc as int.
                                 ttitens.descontoproduto  = (ttitens.valorunitario - ttitens.valorliquido) * ttitens.quantidadeconvertida.
                                 ttitens.valortotalconvertida = ttitens.valorliquido * ttitens.quantidadeconvertida.        
 
-                            end.
-                                    
                             find tt-prodesc where   tt-prodesc.procod = fprodu.procod no-error.
                             if not avail tt-prodesc 
                             then do:
@@ -1361,6 +1391,151 @@ def var vtipo-desc as int.
                         end.
                         
                     end. /* fim 3 */
+
+                    /* fluxo de liberacao */
+                    vsupervisorlibera = no.
+                    vgerentelibera    = no.
+                    vbarramentolibera = yes.
+                    vperc-desc = 100 - (ttitens.valorliquido / ttitens.valorunitario * 100).
+                    
+                    if vtipo-desc <> 3
+                    then do on endkey undo:
+                        hide message no-pause.
+                        message "(10) consultando politica de descontos...".
+                        
+
+                            run p-descmed-barramento (input fprodu.procod,
+                                           input ttitens.valorunitario,
+                                           input ttitens.valorunitario - ttitens.valorliquido,
+                                           output vdescontoMaximoPermitido,
+                                           output vbarramentolibera,
+                                           output p-libregional).
+                            npreco_unitario = ttitens.valorunitario - vdescontoMaximoPermitido.
+                            npreco_total    = npreco_unitario * ttitens.quantidadeconvertida.
+
+                        if vbarramentolibera = no
+                        then do:
+                            if p-libregional
+                            then do:
+                                vbarr-desc = 100 - (npreco_unitario / ttitens.valorunitario * 100). 
+                                disp 
+                                    "  Desconto Negado pela Politica de Descontos" skip(1) 
+                                    "  Sera necessario autorizacao de supervisor" skip(1)
+                                    "  Solicitado R$ " space(1)  ttitens.valorunitario - ttitens.valorliquido vperc-desc format "->>>9.99%" skip(1) 
+                                    "  Valor Maximo de desconto Permitido R$ " space(1) vdescontoMaximoPermitido 
+                                                vbarr-desc format "->>>9.99%" space(2) 
+                                    with frame favisobarramento 
+                                    centered no-labels
+                                    row 7 overlay
+                                    color messages.
+                            end.
+                            else do on endkey undo, retry :
+                                disp 
+                                    "    " skip(1)
+                                    "  Margem de Descontos Esgotada" skip(1) 
+                                    "    " skip(1)
+                                    with frame favisobarramento3 
+                                    centered no-labels
+                                    row 7 overlay
+                                    color messages.
+                                ttitens.valorliquido = ttitens.valorunitario.
+                                hide message no-pause.
+                                message "margem de desconto esgotada!".
+                                pause 2 no-message. 
+                                return.
+                            end.
+                        end.
+                        else do:
+                            disp 
+                                skip(1)
+
+                                "  solicite a senha do gerente para aplicar o desconto" skip(1) 
+                                "  Solicitado R$ " space(1)  ttitens.valorunitario - ttitens.valorliquido vperc-desc format "->>>9.99%" skip(2) 
+                                
+                                with frame favisobarramento2 
+                                centered no-labels
+                                row 8 overlay.
+                            
+                        end.  
+                        
+                        message "(11) solicite senha do gerente".
+                        run senha_gerente (output vgerentelibera). 
+                        hide frame f-senha no-pause.
+                        hide frame favisobarramento no-pause.
+                        hide frame favisobarramento2 no-pause.
+                        
+                        if not vgerentelibera
+                        then do on error undo :
+                            do on endkey undo, retry: /* helio 29122023 BUG desconto de gerentes - Pre venda */
+                                hide message no-pause.
+                                message "(12) desconto nao autorizado pelo gerente.".
+                                pause 1 no-message.
+                            end.
+                            ttitens.valorliquido = ttitens.valorunitario.
+                            return.
+                        end.
+                        
+                        /*if setbcod = 188 then vbarramentolibera = yes.*/
+                        
+                        if not vbarramentolibera
+                        then do on error undo:
+                            vsupervisorlibera = no.
+                            if keyfunction(lastkey) <> "END-ERROR"
+                            then do:
+                                message "(13) solicite token de supervisor" keyfunction(lastkey).
+                                run psenauto.p (input produ.procod, output vsupervisorlibera,
+                                                output p-supervisor).
+                            end.
+
+                            if not vsupervisorlibera
+                            then do on error undo:
+                                do on endkey undo, retry: /* helio 29122023 - BUG desconto de gerentes - Pre venda */
+                                    message color messages "(12) desconto nao autorizado".
+                                    pause 1 no-message.
+                                end.
+                                ttitens.valorliquido = ttitens.valorunitario.
+                                return.    
+                            end.
+                            else do:
+                                    find tt-senauto where tt-senauto.procod = fprodu.procod no-error.
+                                    if not avail tt-senauto
+                                    then do:
+                                        create tt-senauto.
+                                        assign tt-senauto.procod  = fprodu.procod
+                                               tt-senauto.preco-ori = ttitens.valorunitario * 100
+                                               tt-senauto.senauto = (((setbcod + day(today)) + month(today)) + 
+                                                                int(substr(string(time,"HH:MM:SS"),1,2))).
+                                        if ttitens.valorliquido < ttitens.valorunitario
+                                        then assign tt-senauto.desco = yes.
+                                        else assign tt-senauto.desco = no.
+                            end.
+                        end.
+                   end.
+                        if vsupervisorlibera = no
+                        then p-supervisor = "".
+                        
+                        hide message no-pause.
+                        message color normal
+                            "(13) desconto permitido" string(vbarramentolibera,"politica=ok/politica=nao ok") 
+                                                          string(vgerentelibera,"gerente=ok/") 
+                                                          string(vsupervisorlibera,"supervisor=ok/")
+                                                          p-supervisor.
+                        pause 2 no-message.
+                        
+                            find tt-prodesc where   tt-prodesc.procod = produ.procod no-error.
+                            if not avail tt-prodesc 
+                            then do:
+                                create tt-prodesc.
+                                assign tt-prodesc.procod = fprodu.procod
+                                       tt-prodesc.preco  = ttitens.valorliquido.
+                                       tt-prodesc.preco-ven = ttitens.valorunitario.
+                            end.
+                            if tt-prodesc.preco > ttitens.valorunitario
+                            then tt-prodesc.desco = yes.
+                            else tt-prodesc.desco = no.
+                                                 
+                end.     /* if avail wf-movim */
+                
 
  
 
@@ -1528,4 +1703,105 @@ procedure mens-plano:
         then leave.
     end.           
 end procedure.
+
+
+
+
+procedure p-descmed-barramento: 
+
+def input parameter p-procod as int.
+def input parameter p-valorProduto as dec.
+def input parameter p-valorDesconto as dec.
+def output parameter p-descontoMaximoPermitido as dec.
+def output parameter p-lib    as log.
+def output parameter p-libregional as log.
+
+
+for each ttconsultamargemdescontoEntrada. delete ttconsultamargemdescontoEntrada. end.
+for each ttmargemdescontoproduto. delete ttmargemdescontoproduto. end.
+for each ttmargemdesconto. delete ttmargemdesconto. end.
+create ttconsultamargemdescontoEntrada.
+ttconsultamargemdescontoEntrada.codigoLoja      = string(setbcod).
+ttconsultamargemdescontoEntrada.codigoProduto   = string(p-procod).
+ttconsultamargemdescontoEntrada.valorProduto     = string(p-valorproduto).
+ttconsultamargemdescontoEntrada.valorDescontoSolicitado = string(p-valordesconto).
+ttconsultamargemdescontoEntrada.codigoOperador  = string(sfuncod).
+
+/** velha api run wc-consultamargemdesconto.p. */
+run apimargemdesconto.p.  /* nova api */
+
+p-libregional = no.
+p-lib = no.
+p-descontoMaximoPermitido = 0.
+for each ttmargemdescontoproduto where ttmargemdescontoproduto.codigoProduto = string(p-procod).
+    p-descontoMaximoPermitido = dec(ttmargemdescontoproduto.valorMaximoPermitido).
+    p-lib = ttmargemdescontoproduto.autorizaDesconto = "true".
+    p-libregional = ttmargemdescontoproduto.autorizaDescontoRegional = "true".
+end.
+
+
+end procedure.
+
+
+procedure senha_gerente.
+    def output parameter par-ok  as log.
+
+    DO ON ERROR UNDO:
+        hide frame f-senha no-pause.    
+        if keyfunction(lastkey) = "END-ERROR"
+        then do:
+            vfuncod = 0.
+            vsenha = "".
+            par-ok = no.
+            next.
+        end.
+        
+        do on error undo.
+            if keyfunction(lastkey) = "END-ERROR"
+            then do:
+                vfuncod = 0.
+                vsenha = "".
+                par-ok = no. 
+                hide frame f-senha no-pause.    
+
+                next.
+            end.
+
+            vfuncod = 0. vsenha = "". par-ok = no.
+        
+            update vfuncod label "Matricula" 
+                   vsenha  label "Senha" blank 
+                   with frame f-senha side-label centered color message row 16
+                        title " Senha Gerente ".
+
+            find bfunc where bfunc.etbcod = setbcod
+                         and bfunc.funcod = vfuncod no-lock no-error. 
+            if not avail bfunc 
+            then do:
+                message "Funcionario Invalido".
+                pause 3 no-message.
+                par-ok = no.
+                undo, retry.
+            end.  
+            if bfunc.funmec = no 
+            then do:
+                message "Funcionario nao e gerente". 
+                pause 3 no-message. 
+                par-ok = no.
+                undo, retry. 
+            end.     
+            if vsenha <> bfunc.senha 
+            then do:
+                message "Senha invalida".
+                pause 3 no-message.  
+                par-ok = no.
+                undo, retry. 
+            end.
+        end.
+        par-ok = yes.
+    END.        
+
+    hide frame f-senha no-pause.
+end procedure.
+
 
