@@ -1,3 +1,7 @@
+/* helio 08022024 - versao 2 garantias 555859 */
+/* helio 02082023 - IDENTIFICAÇÃO VENDAS COM COTAS - PROCESSO 521965*/
+/* helio 23022023 Projeto Alteração Alíquota de ICMS PR - Volmir */
+/* 31012023 helio - ajuste projeto cupom desconto b2b - sera enviado o cupom no tipo 8 */
 /* helio 20012022 - [UNIFICAÇÃO ZURICH - FASE 2] NOVO CÁLCULO PARA SEGURO PRESTAMISTA MÓVEIS NA PRÉ-VENDA */
 
 /* 
@@ -20,7 +24,11 @@ def input parameter par-rec as recid.
 def input param par-campanha as int.
 def input param par-valorcupomdesconto as dec.
 
+def var vx as int. /* contador */
 def shared var pmoeda as char format "x(30)".
+def shared var vcupomb2b as int format ">>>>>>>>>9". /* helio 31012023 - cupom b2b */
+def NEW shared var vplanocota as int. /* helio 02082023 */
+def shared var p-supervisor as char.
 
 def var vforma as int.
 def var varq   as char.
@@ -28,6 +36,7 @@ def var num_pedido as int.
 def var vprotot   as dec.
 def var vservico  as char.
 def var valiquota as dec.
+def var vcst     as int.
 def var vmovpc    like movim.movpc.
 def var vmovdes   like movim.movdes.
 def var vtempogar as int.
@@ -35,6 +44,7 @@ def var vtipogar  as char.
 def var vtipoped  as int init 1. /* #1 */
 def buffer bliped for liped.
 def buffer bprodu for produ.
+
 
 def shared temp-table tt-liped like com.liped.
 
@@ -54,9 +64,9 @@ def shared var dat-entrega as date.
 def shared var nome-retirada as char format "x(30)".
 def shared var fone-retirada as char format "x(15)".
 
-def  SHARED temp-table tt-seg-movim
+def SHARED temp-table tt-seg-movim
     field seg-procod  as int             /* procod do seguro */
-    field procod      like movim.procod    
+    field procod      like movim.procod  /* procod de venda */
     field ramo        as int
     field meses       as int
     field subtipo     as char
@@ -65,7 +75,7 @@ def  SHARED temp-table tt-seg-movim
     field p2k-datahoraprodu as char
     field p2k-id_seguro     as int
     field p2k-datahoraplano as char
-    field recid-wf-movim as recid init ? /* helio 15/03/2024 */
+    field recid-wf-movim    as recid
     index seg-movim is primary unique seg-procod procod.
 
 def shared temp-table tt-seguroPrestamista no-undo
@@ -268,29 +278,62 @@ for each movim where movim.etbcod = plani.etbcod
     valiquota = produ.proipiper.
 
     find xestab where xestab.etbcod = plani.etbcod no-lock.
-    
-    if valiquota = 99 
-    then do:
-        assign vsittributaria = "F"
-               vmovalicms = 0. 
-    end.
-    else do:
-        assign vsittributaria = "T"
-               vmovalicms = valiquota.
-
-        /* helio 20122021 mudanca aliquota icms 2022 */       
-        if xestab.ufecod = "RS" 
+   
+    /* Helio 04032024 estoq.cst e estoq.aliquotaicms */
+    find estoq where estoq.procod = produ.procod and estoq.etbcod = xestab.etbcod no-lock no-error.
+    if not avail estoq
+    then do:    
+        /* Versao antiga */
+        if valiquota = 99 
         then do:
-            if today >= 01/01/2022 or setbcod = 188
-            then vmovalicms = 17.
+            assign vsittributaria = "F"
+                   vmovalicms = 0. 
+        end.
+        else do:
+            assign vsittributaria = "T"
+                   vmovalicms = valiquota. 
+                   vmovalicms = 17.
         end.        
-        /**/
-
         if xestab.ufecod = "SC"  
         then do:
             valiquota = 17.
             vmovalicms = valiquota. /* helio 13/04/2022 a pedido milena */
-            /*run aliquotaicms.p (produ.procod, 0, xestab.ufecod, xestab.ufecod, output valiquota).*/
+        end.    
+        if xestab.ufecod = "PR"  
+        then do:
+            valiquota = 19.
+            vmovalicms = valiquota. /* helio 13/04/2022 a pedido milena */
+        end.    
+        /* fim versao antiga */
+    end.
+    else do:
+        /* Versao nova, pega dados cst e aliquotaicms de estoq */
+        valiquota   = estoq.aliquotaicms.
+        vcst        = estoq.cst.
+        /* Regra ate 20/03/2024
+        *if vcst = 60 then do:
+        *    vmovalicms      = 0.
+        *    vsittributaria  = "F".
+        *end.    
+        *else do:
+        *    vsittributaria  = "T".
+        *    vmovalicms      = valiquota.
+        *end.
+        */
+        /* helio 20032024 */
+        if vcst = 0 or vcst = 20 then do:
+            vsittributaria  = "T".
+            vmovalicms      = valiquota.
+            if vmovalicms = 0 
+            then do:
+                if xestab.ufecod = "PR" then vmovalicms = 19.5. 
+                if xestab.ufecod = "SC" then vmovalicms = 17. 
+                if xestab.ufecod = "RS" then vmovalicms = 17. 
+            end. 
+        end.
+        else do:
+           vmovalicms      = 0.
+           vsittributaria  = "F".
         end.    
         
     end.
@@ -353,6 +396,14 @@ for each movim where movim.etbcod = plani.etbcod
         then assign
                 vmovdes = tt-prodesc.preco - tt-prodesc.preco-ven
                 vmovpc  = vmovpc + vmovdes.
+    
+    if vcupomb2b <> 0 and  vcupomb2b <> ? /* helio 06032023 - colocado teste de so quand for b2b */
+    then do.
+        /* helio 03022023 - nao estava enviando o desconto */
+        vmovpc  = wf-movim.precoori.
+        vmovdes = wf-movim.precoori - wf-movim.movpc.
+    end.
+    
 
     put unformatted
         2               format "99"         /* Tipo_Reg */
@@ -402,7 +453,10 @@ for each movim where movim.etbcod = plani.etbcod
 end.
 
 for each tt-seg-movim no-lock.
-    vprotot = vprotot + tt-seg-movim.movpc.
+    find first wf-movim where recid(wf-movim) = tt-seg-movim.recid-wf-movim.
+    do vx = 1 to wf-movim.movqtm:
+        vprotot = vprotot + tt-seg-movim.movpc.
+    end.        
 end.
 
 /***
@@ -439,10 +493,13 @@ end.
     Registro 05 - GE / RFQ
 ***/
 for each tt-seg-movim no-lock.
+
+    
     find first movim where movim.etbcod = plani.etbcod
                        and movim.placod = plani.placod
                        and movim.procod = tt-seg-movim.procod
                      no-lock.
+    find first wf-movim where recid(wf-movim) = tt-seg-movim.recid-wf-movim.
 
     find produ of tt-seg-movim no-lock.
     find bprodu where bprodu.procod = tt-seg-movim.seg-procod no-lock.
@@ -454,7 +511,8 @@ for each tt-seg-movim no-lock.
     if avail produaux
     then vtempogar = int(produaux.valor_campo).
 
-    put unformatted
+    do vx = 1 to wf-movim.movqtm:
+        put unformatted
         5                   format "99"         /* Tipo_Reg */
         Plani.etbcod        format "99999"      /* Codigo_Loja */
         Plani.notass        format "9999999999" /* Numero_Pedido */
@@ -480,9 +538,10 @@ for each tt-seg-movim no-lock.
         substr(tt-seg-movim.p2k-datahoraprodu, 9, 6)
                             format "x(6)"       /* Hora Venda */
         tt-seg-movim.p2k-datahoraplano  format "x(14)" /* WS */
-        movim.movseq        format "999999"    
+        movim.movseq       format "999999"    
         tt-seg-movim.p2k-id_seguro format "9999999999" /* WS */
         skip.
+    end.
 end.
 
 /***
@@ -531,6 +590,9 @@ end.
 /***
     Registro tipo 8 - Pedido especial
 ***/
+
+/* 31012023 */ vcha-obs-ped-especial = "".
+
 for each movim where movim.etbcod = plani.etbcod and
                      movim.placod = plani.placod no-lock.
 
@@ -550,13 +612,13 @@ for each movim where movim.etbcod = plani.etbcod and
                                        + trim(acha("OBS2",liped.lipcor)) + " "
                                        + trim(acha("OBS3",liped.protip)) + " "
                                        + trim(acha("OBS4",liped.protip)).
-
-            put unformatted
-                8                     format "99"     /* Tipo_Reg */ 
-                vcha-obs-ped-especial format "x(250)" /* OBS Pedido Especial*/
-                /***formatadata(liped.predt)***/
-                skip.
-
+          /* 31012023 - retirado o envio do tipo 8 desta linha
+           * put unformatted
+           *     8                     format "99"     /* Tipo_Reg */ 
+           *     vcha-obs-ped-especial format "x(250)" /* OBS Pedido Especial*/
+           *     /***formatadata(liped.predt)***/
+           *     skip.
+           */
         /************************************************************
         ****    Sai após colocar a primeira linha do registro 9  ****
         ****    no arquivo pois todas serão iguais.              ****
@@ -564,6 +626,41 @@ for each movim where movim.etbcod = plani.etbcod and
         leave.
     end.
 end.
+
+/* 31012023 helio - ajuste projeto cupom desconto b2b - sera enviado o cupom no tipo 8 */
+/* alterado o envio do tipo 8 */
+if vcha-obs-ped-especial <> "" or vcupomb2b <> 0  or p-supervisor <> ""
+    /* helio 02082023 */ or vplanocota <> 0
+then do:
+    if vcha-obs-ped-especial = "PEDIDOESPECIAL" then vcha-obs-ped-especial = "PEDIDOESPECIAL=SIM".
+     
+    if vcupomb2b <> 0
+    then vcha-obs-ped-especial = vcha-obs-ped-especial + 
+                                 (if vcha-obs-ped-especial <> ""
+                                  then "|"
+                                  else "") +
+                                    "CUPOM_DESCONTO=" + string(vcupomb2b).
+    if vplanocota <> 0
+    then vcha-obs-ped-especial = vcha-obs-ped-especial + 
+                                 (if vcha-obs-ped-especial <> ""
+                                  then "|"
+                                  else "") +
+                                    "USA_COTA_PLANO=SIM".
+
+    if p-supervisor <> "" 
+    then vcha-obs-ped-especial = vcha-obs-ped-especial + 
+                                (if vcha-obs-ped-especial <> "" 
+                                 then "|" 
+                                 else "") + 
+                                 "DESC_REGIONAL=" + p-supervisor.
+
+    put unformatted
+                8                     format "99"     /* Tipo_Reg */ 
+                vcha-obs-ped-especial format "x(250)" 
+                skip.
+
+end.
+/*31012023 */
 
 /***
     Registro 09 - Combo
