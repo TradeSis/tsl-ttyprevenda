@@ -1,7 +1,7 @@
 {admcab.i}
 {bagdefs.i new}
 
- DEFINE new shared TEMP-TABLE ttclien NO-UNDO       serialize-name 'creditoCliente'
+DEFINE new shared TEMP-TABLE ttclien NO-UNDO       serialize-name 'creditoCliente'
     field tipo    as char format "x(18)"
     field clicod    as int serialize-name 'codigoCliente'
     field cpfCNPJ    as char format "x(18)"    serialize-name 'cpfCNPJ'
@@ -24,6 +24,17 @@
     field quantidadeAte45Dias as int
     field quantidadeAcima45Dias as int
     /* #092022 */
+    /* helio replicacao de dados do cliente */
+    field cep       as char
+    field logradouro as char
+    field numero as int
+    field complemento   as char    
+    field bairro as char
+    field cidade as char
+    field estado as char
+    field email as char
+    field celular as char
+    
     index cli is unique primary clicod asc tipo desc.
 
 def var pcpf    as dec format "99999999999" label "CPF".
