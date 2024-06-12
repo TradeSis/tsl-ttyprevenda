@@ -87,12 +87,12 @@ def var arr-arred  as dec extent 83
 
 /* https://trello.com/c/3s4DnvzH */
 
-def var plano_sem_arr as int extent 23
+def var plano_sem_arr as int extent 25
     init[51,52,53,54,55,
         60,61,77,
             251,252,253,254,255,
                 260,261,
-                    272,273,274,275,276,
+                    272,273,274,275,276,277,278,
                         299,
                         117,118].
                         
@@ -125,7 +125,7 @@ end.
 
 /* https://trello.com/c/3s4DnvzH */
 def var tt as int.
-do tt = 1 to 23.
+do tt = 1 to 25.
      if plano_sem_arr[tt] = 00
           then leave.
                find first tt-arr where
