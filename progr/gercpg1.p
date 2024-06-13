@@ -87,12 +87,12 @@ def var arr-arred  as dec extent 83
 
 /* https://trello.com/c/3s4DnvzH */
 
-def var plano_sem_arr as int extent 25
+def var plano_sem_arr as int extent 27
     init[51,52,53,54,55,
         60,61,77,
             251,252,253,254,255,
                 260,261,
-                    272,273,274,275,276,277,278,
+                    272,273,274,275,276,277,278,279,280,
                         299,
                         117,118].
                         
@@ -125,7 +125,7 @@ end.
 
 /* https://trello.com/c/3s4DnvzH */
 def var tt as int.
-do tt = 1 to 25.
+do tt = 1 to 27.
      if plano_sem_arr[tt] = 00
           then leave.
                find first tt-arr where
@@ -390,7 +390,7 @@ repeat:
                finan.fincod = 324 or
                finan.fincod = 421 or
                finan.fincod = 422 or
-               /* Alteração arredondamento de planos 06/2014 */
+               /* AlteraÃ§Ã£o arredondamento de planos 06/2014 */
                finan.fincod = 116 or 
                finan.fincod = 316 or
                finan.fincod = 121 or
@@ -858,7 +858,7 @@ repeat:
 
             wpar = finan.finnpc.
 
-            /*** planos especiais de inauguração ***/
+            /*** planos especiais de inauguraÃ§Ã£o ***/
             if finan.fincod = 35 or
                finan.fincod = 36 or
                finan.fincod = 38 or
