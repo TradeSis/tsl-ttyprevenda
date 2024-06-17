@@ -59,7 +59,9 @@ assign
         ttmedprodu.tipoServico
             with frame frame-a 5 down centered row 9 no-box
             no-labels.
-
+find first ttmedprodu no-error.
+if not avail ttmedprodu
+then return.
 
 bl-princ:
 repeat:

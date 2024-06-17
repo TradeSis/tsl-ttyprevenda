@@ -24,7 +24,9 @@
     
     do:    
         find first ttmedprodu where ttmedprodu.procod = pprocod no-lock no-error.
-        if not avail ttmedprodu then return.
+        if not avail ttmedprodu then do:
+            return.
+        end.    
                 
         
         disp pprocod format ">>>>>>>>9" 
