@@ -869,19 +869,23 @@ do on error undo, retry  on endkey undo, leave with frame f-desti:
         if identificador <> "" 
         then display identificador with frame f-desti.                
     end.
-    find first wf-movim no-lock no-error.
-    if avail wf-movim
-    then v-vendedor = wf-movim.vencod.
-    else v-vendedor = 0.
+    /* helio 07062024 - comissao crediarista 
+     *   find first wf-movim no-lock no-error.
+     *   if avail wf-movim
+     *   then v-vendedor = wf-movim.vencod.
+     *   else 
+    */          v-vendedor = 0.
     do on error undo: 
         v-vencod = v-vendedor.
         update v-vendedor with  frame f-desti. 
-        if v-vencod > 0 and v-vendedor <> v-vencod
-        then do:
-            message " Vendedor nao pode ser alterado.".
-            v-vendedor = v-vencod.
-            undo.
-        end.
+        /* helio 07062024 - comissao crediarista
+        *if v-vencod > 0 and v-vendedor <> v-vencod
+        *then do:
+        *    message " Vendedor nao pode ser alterado.".
+        *    v-vendedor = v-vencod.
+        *    undo.
+        *end.
+        */
         find func where func.funcod = v-vendedor and 
                         func.etbcod = setbcod no-lock no-error.
         if not avail func 
@@ -894,8 +898,8 @@ do on error undo, retry  on endkey undo, leave with frame f-desti:
              func.funnom with frame f-desti. 
     
         v-vencod = v-vendedor. 
-    
-        for each wf-movim. 
+        /* helio 07062024 - comissao crediarista - so os zerados */    
+        for each wf-movim where wf-movim.vencod = 0. 
             wf-movim.vencod = func.funcod. 
         end.
     end. 
