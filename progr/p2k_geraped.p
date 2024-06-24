@@ -410,7 +410,7 @@ for each movim where movim.etbcod = plani.etbcod
         Plani.notass    format "9999999999" /* Numero_Pedido */
         Movim.movseq    format "999999"     /* Seq_Item_Pedido */
         0               format "99999"      /* Num_Componente  */
-        plani.vencod    format "999999"     /* Codigo_Vendedor */
+        wf-movim.vencod    format "999999"     /* Codigo_Vendedor */ /* helio 07062024 - comissao crediarista */
         string(Movim.procod,"99999999999999999999")
                         format "x(20)"      /* Codigo_Produto */
         0 /**Movim.procod**/    format "99999999999999" /* Cod_Autom_Prod */
@@ -516,7 +516,7 @@ for each tt-seg-movim no-lock.
         Plani.etbcod        format "99999"      /* Codigo_Loja */
         Plani.notass        format "9999999999" /* Numero_Pedido */
         0                   format "99999"      /* Num_Componente */
-        plani.vencod        format "999999"     /* Codigo_Vendedor */
+        wf-movim.vencod        format "999999"     /* Codigo_Vendedor */ /* helio 07062024 - comissao crediarista */
         string(tt-seg-movim.procod,"99999999999999999999")
                             format "x(20)"      /* Codigo_Produto */
         0                   format "99999999999999" /* Cod_Autom_Prod */
