@@ -5,6 +5,9 @@ def output param pclicod    as int.
 def output param vresp      as log.
 pclicod = ?.
 
+def var vfuncod like func.funcod.
+def var vsenha  like fun.senha.
+def var sresp   as log format "Sim/Nao".
 def new global shared var setbcod as int.
 def var par-certo as log.
 /* helio 06022024 - testes de telefone */
@@ -30,27 +33,63 @@ repeat
     centered
     title "CADASTRAMENTO DE CLIENTE"
     1 down
-    on endkey undo, retry:
+    on endkey undo, retry: 
+    
+    
+    hide frame f-senha no-pause.            
+
     if retry and keyfunction(lastkey) = "END-ERROR"
     then do:
         vresp = no.
-                run clitelamensagem.p (INPUT-OUTPUT vresp,
+                run clitelamensagem.p (INPUT-OUTPUT sresp,
                                    input "            CLIENTE NAO ESTA SENDO CADASTRADO!" + 
                                             chr(10) + chr(10) + "          Deseja Nao Cadastrar o Cliente?" ,
                                    input "",
                                    input "Sair Sem Cadastrar",
                                    input "Cadastrar").  
-                    if vresp = yes  
+                    if sresp = yes  
                     then do:
                         vresp = no.
-                            run clitelamensagem.p (INPUT-OUTPUT vresp,
+                            run clitelamensagem.p (INPUT-OUTPUT sresp,
                                    input "            CLIENTE NAO ESTA SENDO CADASTRADO!" + 
                                             chr(10) + chr(10) + " Tem Certeza que Deseja NAO cadastrar o Cliente?" ,
                                    input "",
                                    input "SIM",
                                    input "Cadastrar").  
-                        if vresp = yes
-                        then return.
+                        if sresp = yes
+                        then do:
+                            vfuncod = 0. vsenha = "".
+                            update skip(1) 
+                                    space(18) " PARA JUSTIFICAR A NAO IDENTIFICACAO " skip (1)
+                                    space(20) vfuncod label "Matricula" 
+                                   vsenha  label "Senha" blank 
+                                   skip(2) 
+                                   with frame f-senha side-label centered color message row 7 width 76
+                                   title " DIGITE MATRICULA E SENHA DO GERENTE " .
+                            find func where func.etbcod = setbcod
+                                         and func.funcod = vfuncod no-lock no-error. 
+                            if not avail func 
+                            then do:
+                                message "Funcionario Invalido".
+                                vresp = no.
+                                undo, retry.
+                            end.  
+                            if func.funmec = no 
+                            then do:
+                                message "Funcionario nao e gerente". 
+                                vresp = no.
+                                undo, retry. 
+                            end. 
+                            if vsenha <> func.senha 
+                            then do:
+                                message "Senha invalida".
+                                vresp = no.
+                                undo, retry. 
+                            end.
+                            vresp = yes.
+                            hide frame f-senha no-pause.            
+                            return.
+                        end.    
                     end.                            
     
     end.
