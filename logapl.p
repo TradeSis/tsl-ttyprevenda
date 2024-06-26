@@ -65,13 +65,13 @@ input close.
 def var vpathhml as char.
 
 def var vhml as char format "x(78)" extent 7 initial
-    ["1-Versao de Producao (ATU=19/04/2024 TOKEN regional 538865)",
+    ["1-Versao Producao (ATU=25/06/2024 CDPlus + Comissao Cred + SenhaCad Rapido)",
      "2-Homologacao Melhoria Venda Outra Loja (31/01/2024)",
      "3-Homologacao Melhoria 555081 BAG Desconto Gerente (22/04/2024)",
      "4-Homologacao Melhoria 562981 Carencia 15 dias BAG (17/04/2024)",
      "5-Homologacao M. 591058 PIX Plano 990 04/03/2024",
-     "6-Homologacao M. 619030/623906 Chama doutor familiar e Plus 27/03/2024" ,
-     "7-Homologacao Projeto Comissao Crediarista 29/04/2024" 
+     "", /*"6-Homologacao P Senha Gerente CadRapido 25/06",*/
+     "" /*7-Homologacao Projeto Comissao Crediarista 29/04/2024" */
      
      ]. 
 
@@ -91,9 +91,9 @@ then vpathhml = "/usr/admcom/tty/hml/562981carbag/,".
 if frame-index = 5 
 then vpathhml = "/usr/admcom/tty/hml/591058/,".
 if frame-index = 6 
-then vpathhml = "../tty/hml/medfamplus/,".
+then return. /*vpathhml = "/usr/admcom/tty/hml/senhacadrap/,".*/
 if frame-index = 7
-then vpathhml = "../tty/hml/comisaocre/,".
+then return. /*vpathhml = "../tty/hml/comisaocre/,".*/
 
 hide frame fhml no-pause.
 propath = vpathhml + "/usr/admcom/tty/,/usr/admcom/tty/progr/," + vpropath.

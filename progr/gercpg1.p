@@ -390,7 +390,7 @@ repeat:
                finan.fincod = 324 or
                finan.fincod = 421 or
                finan.fincod = 422 or
-               /* Alteração arredondamento de planos 06/2014 */
+               /* AlteraÃ§Ã£o arredondamento de planos 06/2014 */
                finan.fincod = 116 or 
                finan.fincod = 316 or
                finan.fincod = 121 or
@@ -858,7 +858,7 @@ repeat:
 
             wpar = finan.finnpc.
 
-            /*** planos especiais de inauguração ***/
+            /*** planos especiais de inauguraÃ§Ã£o ***/
             if finan.fincod = 35 or
                finan.fincod = 36 or
                finan.fincod = 38 or
