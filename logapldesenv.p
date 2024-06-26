@@ -64,9 +64,9 @@ input close.
 
 def var vpathhml as char.
 
-def var vhml as char format "x(78)" extent 1 initial
-    [
-     "1-Desenvolvimento"
+def var vhml as char format "x(78)" extent 2 initial
+    ["1-Desenvolvimento",
+     ""
      ]. 
 
 disp vhml with frame fhml
@@ -76,6 +76,10 @@ choose field vhml go-on(F4 PF4) with frame fhml.
 if keyfunction(lastkey) = "end-error" then quit.
 
 vpathhml = "/usr/admcom/desenv/,".
+if frame-index = 1 
+then vpathhml = "/usr/admcom/desenv/,".
+if frame-index = 2 
+then return.
 
 hide frame fhml no-pause.
 propath = vpathhml + "/usr/admcom/tty/,/usr/admcom/tty/progr/," + vpropath.

@@ -1,6 +1,5 @@
 /* cpf.p  -  Validação do CPF                                                 */
-// comit 1
-// commit 2
+
 /*******************************************************************************
 *         Vari veis necess rias no programa                                    *
 *                                                                              *
